@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 
 from app.core.config import setting
+from app.core.storage import storage_manager
 from app.core.logger import logger
 from app.services.grok.token import token_manager
 from app.models.grok_models import TokenType
@@ -528,8 +529,8 @@ async def get_storage_mode(_: bool = Depends(verify_admin_session)) -> Dict[str,
     """获取存储模式"""
     try:
         logger.debug("[Admin] 获取存储模式")
-        mode = os.getenv("STORAGE_MODE", "file").upper()
-        return {"success": True, "data": {"mode": mode}}
+        status = storage_manager.get_status()
+        return {"success": True, "data": status}
     except Exception as e:
         logger.error(f"[Admin] 获取存储模式异常: {e}")
         raise HTTPException(status_code=500, detail={"error": f"获取失败: {e}", "code": "STORAGE_MODE_ERROR"})

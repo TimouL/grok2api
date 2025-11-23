@@ -50,6 +50,16 @@ class GrokTokenManager:
     def set_storage(self, storage) -> None:
         """设置存储实例"""
         self._storage = storage
+        if hasattr(storage, "data_dir"):
+            self.token_file = Path(storage.data_dir) / "token.json"
+            self.token_file.parent.mkdir(parents=True, exist_ok=True)
+
+    async def reload(self) -> None:
+        """从存储重新加载Token数据"""
+        if self._storage:
+            self.token_data = await self._storage.load_tokens()
+        else:
+            self._load_data()
 
     def _load_data(self) -> None:
         """加载Token数据"""

@@ -1,5 +1,6 @@
 """配置管理器 - 管理应用配置的读写"""
 
+import os
 import toml
 from pathlib import Path
 from typing import Dict, Any, Optional, Literal
@@ -70,14 +71,30 @@ class ConfigManager:
     def set_storage(self, storage: Any) -> None:
         """设置存储实例"""
         self._storage = storage
+        if hasattr(storage, "data_dir"):
+            self.config_path = Path(storage.data_dir) / "setting.toml"
+            self._ensure_exists()
+
+    def _apply_env_overrides(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """应用环境变量覆盖管理员账号"""
+        admin_user = os.getenv("ADMIN_USERNAME")
+        admin_pass = os.getenv("ADMIN_PASSWORD")
+
+        if admin_user:
+            config.setdefault("global", {})["admin_username"] = admin_user
+        if admin_pass:
+            config.setdefault("global", {})["admin_password"] = admin_pass
+        return config
 
     def load(self, section: Literal["global", "grok"]) -> Dict[str, Any]:
         """加载配置节"""
         try:
             with open(self.config_path, "r", encoding="utf-8") as f:
-                config = toml.load(f)[section]
+                config_all = toml.load(f)
 
-            # 标准化Grok配置
+            config_all = self._apply_env_overrides(config_all)
+            config = config_all.get(section, {})
+
             if section == "grok":
                 if "proxy_url" in config:
                     config["proxy_url"] = self._normalize_proxy(config["proxy_url"])

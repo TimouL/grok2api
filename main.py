@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
     
     # 重新加载配置和token数据
     await setting.reload()
-    token_manager._load_data()
+    await token_manager.reload()
     logger.info("[Grok2API] 核心服务初始化完成")
 
     # 2. 管理MCP服务的生命周期

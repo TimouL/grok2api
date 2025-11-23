@@ -14,7 +14,7 @@ show_thinking = true
 [global]
 base_url = ""
 log_level = "DEBUG"
-image_mode = "url"
+image_mode = "base64"
 admin_password = "admin"
 admin_username = "admin"
 image_cache_max_size_mb = 512
