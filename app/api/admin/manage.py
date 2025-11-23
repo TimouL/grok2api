@@ -1,11 +1,12 @@
 """管理接口 - Token管理和系统配置"""
 
+import os
 import secrets
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends, Header
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 
 from app.core.config import setting
@@ -21,6 +22,7 @@ STATIC_DIR = Path(__file__).parents[2] / "template"
 TEMP_DIR = Path(__file__).parents[3] / "data" / "temp"
 IMAGE_CACHE_DIR = TEMP_DIR / "image"
 VIDEO_CACHE_DIR = TEMP_DIR / "video"
+DATA_DIR = Path(__file__).parents[3] / "data"
 SESSION_EXPIRE_HOURS = 24
 BYTES_PER_KB = 1024
 BYTES_PER_MB = 1024 * 1024
@@ -191,6 +193,25 @@ def _format_size(size_bytes: int) -> str:
     if size_mb < 1:
         return f"{size_bytes / BYTES_PER_KB:.1f} KB"
     return f"{size_mb:.1f} MB"
+
+
+def _ensure_file_mode() -> None:
+    """确保处于文件存储模式"""
+    if os.getenv("STORAGE_MODE", "file").lower() != "file":
+        raise HTTPException(status_code=400, detail={"error": "仅在文件存储模式下可用", "code": "INVALID_STORAGE_MODE"})
+
+
+def _resolve_storage_path(subpath: str) -> Path:
+    """解析并校验存储路径，防止越界"""
+    base = DATA_DIR.resolve()
+    target = (base / subpath).resolve()
+
+    try:
+        target.relative_to(base)
+    except ValueError:
+        raise HTTPException(status_code=400, detail={"error": "路径越界", "code": "PATH_OUT_OF_SCOPE"})
+
+    return target
 
 
 # === 页面路由 ===
@@ -507,12 +528,101 @@ async def get_storage_mode(_: bool = Depends(verify_admin_session)) -> Dict[str,
     """获取存储模式"""
     try:
         logger.debug("[Admin] 获取存储模式")
-        import os
         mode = os.getenv("STORAGE_MODE", "file").upper()
         return {"success": True, "data": {"mode": mode}}
     except Exception as e:
         logger.error(f"[Admin] 获取存储模式异常: {e}")
         raise HTTPException(status_code=500, detail={"error": f"获取失败: {e}", "code": "STORAGE_MODE_ERROR"})
+
+
+@router.get("/api/storage/files")
+async def list_storage_files(path: str = "", _: bool = Depends(verify_admin_session)) -> Dict[str, Any]:
+    """列出文件存储目录内容"""
+    try:
+        _ensure_file_mode()
+
+        target_dir = _resolve_storage_path(path or ".")
+
+        if not target_dir.exists():
+            raise HTTPException(status_code=404, detail={"error": "路径不存在", "code": "PATH_NOT_FOUND"})
+
+        if not target_dir.is_dir():
+            raise HTTPException(status_code=400, detail={"error": "目标不是目录", "code": "NOT_A_DIRECTORY"})
+
+        items = []
+        for entry in target_dir.iterdir():
+            try:
+                stat = entry.stat()
+                items.append({
+                    "name": entry.name,
+                    "is_dir": entry.is_dir(),
+                    "size": stat.st_size,
+                    "modified_ts": int(stat.st_mtime)
+                })
+            except Exception as e:
+                logger.warning(f"[Admin] 无法读取文件信息: {entry.name}, {e}")
+
+        current = "" if target_dir == DATA_DIR else str(target_dir.relative_to(DATA_DIR))
+
+        return {"success": True, "data": {"path": current, "items": sorted(items, key=lambda x: x['name'])}}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[Admin] 列出存储目录异常: {e}")
+        raise HTTPException(status_code=500, detail={"error": f"获取失败: {e}", "code": "LIST_STORAGE_ERROR"})
+
+
+@router.get("/api/storage/files/download")
+async def download_storage_file(path: str, _: bool = Depends(verify_admin_session)):
+    """下载文件存储中的文件"""
+    try:
+        _ensure_file_mode()
+
+        file_path = _resolve_storage_path(path)
+
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail={"error": "文件不存在", "code": "FILE_NOT_FOUND"})
+
+        if not file_path.is_file():
+            raise HTTPException(status_code=400, detail={"error": "目标不是文件", "code": "NOT_A_FILE"})
+
+        return FileResponse(file_path, filename=file_path.name)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[Admin] 下载文件异常: {e}")
+        raise HTTPException(status_code=500, detail={"error": f"下载失败: {e}", "code": "DOWNLOAD_ERROR"})
+
+
+@router.delete("/api/storage/files")
+async def delete_storage_file(path: str, _: bool = Depends(verify_admin_session)) -> Dict[str, Any]:
+    """删除文件存储中的文件"""
+    try:
+        _ensure_file_mode()
+
+        file_path = _resolve_storage_path(path)
+
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail={"error": "文件不存在", "code": "FILE_NOT_FOUND"})
+
+        if file_path.is_dir():
+            raise HTTPException(status_code=400, detail={"error": "不支持删除目录", "code": "DIRECTORY_DELETE_BLOCKED"})
+
+        try:
+            file_path.unlink()
+        except Exception as e:
+            logger.error(f"[Admin] 删除文件失败: {file_path.name}, {e}")
+            raise HTTPException(status_code=500, detail={"error": "删除失败", "code": "DELETE_FAILED"})
+
+        return {"success": True, "message": f"已删除 {file_path.name}", "data": {"deleted": file_path.name}}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[Admin] 删除文件异常: {e}")
+        raise HTTPException(status_code=500, detail={"error": f"删除失败: {e}", "code": "DELETE_ERROR"})
 
 
 @router.post("/api/tokens/tags")
