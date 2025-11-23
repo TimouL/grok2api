@@ -85,6 +85,52 @@
                 </nav>
             </div>
         </div>
+        
+        <!-- 文件管理面板 -->
+        <div id="panelStorage" class="hidden">
+            <div id="fileStorageCard" class="rounded-lg border border-border bg-background p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-xl font-bold">文件管理</h2>
+                        <span id="fileStorageModeBadge" class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground border">FILE</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <button onclick="navigateUpStorage()" class="btn-icon" title="上一级">
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <button onclick="loadStorageFiles(storageCurrentPath)" class="btn-icon" title="刷新">
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="fileStorageUnavailable" class="text-sm text-muted-foreground">仅在 FILE 存储模式下可用。</div>
+
+                <div id="fileStorageContent" class="hidden space-y-3">
+                    <div class="flex items-center gap-2 flex-wrap text-sm">
+                        <div class="text-muted-foreground">当前位置：</div>
+                        <div id="storageBreadcrumb" class="flex items-center gap-1"></div>
+                    </div>
+                    <div class="text-xs text-muted-foreground" id="storagePathDisplay"></div>
+                    <div class="overflow-auto border border-border rounded-md">
+                        <table class="w-full text-sm">
+                            <thead class="bg-muted/40 border-b border-border">
+                                <tr>
+                                    <th class="text-left px-3 py-2 w-8"></th>
+                                    <th class="text-left px-3 py-2">名称</th>
+                                    <th class="text-left px-3 py-2 w-28">大小</th>
+                                    <th class="text-left px-3 py-2 w-40">修改时间</th>
+                                    <th class="text-right px-3 py-2 w-24">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="storageTableBody"></tbody>
+                        </table>
+                        <div id="storageEmpty" class="hidden text-center text-sm text-muted-foreground py-6">目录为空</div>
+                    </div>
+                    <p class="text-xs text-muted-foreground">仅可浏览与下载 /data 下文件，禁止删除目录。</p>
+                </div>
+            </div>
+        </div>
     </header>
 
     <main class="mx-auto max-w-7xl px-6 py-6">
@@ -93,6 +139,7 @@
             <nav class="flex space-x-8">
                 <button onclick="switchTab('tokens')" id="tabTokens" class="tab-btn border-b-2 border-primary text-sm font-medium py-3 px-1">Token 管理</button>
                 <button onclick="switchTab('settings')" id="tabSettings" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">Setting 配置</button>
+                <button onclick="switchTab('storage')" id="tabStorage" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">文件管理</button>
             </nav>
         </div>
 
@@ -345,47 +392,6 @@
                         </div>
                     </div>
 
-                    <!-- 文件存储管理（仅 FILE 模式） -->
-                    <div id="fileStorageCard" class="rounded-lg border border-border bg-background p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-sm font-semibold">文件存储</h3>
-                            <span id="fileStorageModeBadge" class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground border">FILE</span>
-                        </div>
-                        <div id="fileStorageUnavailable" class="text-sm text-muted-foreground">仅在 FILE 存储模式下可用。</div>
-                        <div id="fileStorageContent" class="hidden space-y-3">
-                            <div class="flex items-center justify-between text-sm">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <div class="text-muted-foreground">当前位置：</div>
-                                    <div id="storageBreadcrumb" class="flex items-center gap-1"></div>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <button onclick="navigateUpStorage()" class="btn-icon" title="上一级">
-                                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-                                    </button>
-                                    <button onclick="loadStorageFiles(storageCurrentPath)" class="btn-icon" title="刷新">
-                                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="text-xs text-muted-foreground" id="storagePathDisplay"></div>
-                            <div class="overflow-auto border border-border rounded-md">
-                                <table class="w-full text-sm">
-                                    <thead class="bg-muted/40 border-b border-border">
-                                        <tr>
-                                            <th class="text-left px-3 py-2 w-8"></th>
-                                            <th class="text-left px-3 py-2">名称</th>
-                                            <th class="text-left px-3 py-2 w-28">大小</th>
-                                            <th class="text-left px-3 py-2 w-40">修改时间</th>
-                                            <th class="text-right px-3 py-2 w-24">操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="storageTableBody"></tbody>
-                                </table>
-                                <div id="storageEmpty" class="hidden text-center text-sm text-muted-foreground py-6">目录为空</div>
-                            </div>
-                            <p class="text-xs text-muted-foreground">仅可浏览与下载 /data 下文件，禁止删除目录。</p>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -662,7 +668,7 @@
         const exportSelected=()=>{if(!selectedTokens.size)return showToast('请先选择要导出的 Token','error');const sd=allTokens.filter(t=>selectedTokens.has(t.token)),csv=[['Token','类型','状态','普通调用剩余','高级调用剩余','创建时间'].join(','),...sd.map(t=>[`"${t.token}"`,t.token_type==='sso'?'SSO':'SuperSSO',t.status,t.remaining_queries===-1?'未使用':t.remaining_queries,t.heavy_remaining_queries===-1?'未使用':t.heavy_remaining_queries,`"${t.created_time?new Date(t.created_time).toLocaleString('zh-CN'):'-'}"`].join(','))].join('\n'),l=document.createElement('a');l.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));l.download=`grok_tokens_${new Date().toISOString().slice(0,10)}.csv`;l.style.display='none';document.body.appendChild(l);l.click();document.body.removeChild(l);URL.revokeObjectURL(l.href);showToast(`已导出 ${selectedTokens.size} 个 Token`,'success')}
         showToast=(m,t='info')=>{const d=document.createElement('div'),bc={success:'bg-green-600',error:'bg-destructive',info:'bg-primary'};d.className=`fixed bottom-4 right-4 ${bc[t]||bc.info} text-white px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium z-50 animate-slide-up`;d.textContent=m;document.body.appendChild(d);setTimeout(()=>{d.style.opacity='0';d.style.transition='opacity .3s';setTimeout(()=>d.parentNode&&document.body.removeChild(d),300)},2000)}
         logout=async()=>{if(!confirm('确定要退出登录吗?'))return;try{await apiRequest('/api/logout',{method:'POST'})}catch(e){console.error('登出失败:',e)}finally{localStorage.removeItem('adminToken');location.href='/login'}},
-        switchTab=t=>{const cap=n=>n.charAt(0).toUpperCase()+n.slice(1);['tokens','settings'].forEach(n=>{const active=n===t;$(`panel${cap(n)}`).classList.toggle('hidden',!active);$(`tab${cap(n)}`).classList.toggle('border-primary',active);$(`tab${cap(n)}`).classList.toggle('text-primary',active);$(`tab${cap(n)}`).classList.toggle('border-transparent',!active);$(`tab${cap(n)}`).classList.toggle('text-muted-foreground',!active)});t==='settings'&&loadSettings()},
+        switchTab=t=>{const cap=n=>n.charAt(0).toUpperCase()+n.slice(1);['tokens','settings','storage'].forEach(n=>{const active=n===t;$(`panel${cap(n)}`).classList.toggle('hidden',!active);$(`tab${cap(n)}`).classList.toggle('border-primary',active);$(`tab${cap(n)}`).classList.toggle('text-primary',active);$(`tab${cap(n)}`).classList.toggle('border-transparent',!active);$(`tab${cap(n)}`).classList.toggle('text-muted-foreground',!active)});if(t==='settings')loadSettings();if(t==='storage'){applyStorageModeToUI();if(currentStorageMode==='FILE')loadStorageFiles(storageCurrentPath)}},
         updateCacheProxyReadonly=()=>{const proxyUrl=$('cfgProxyUrl').value.trim(),cacheProxyInput=$('cfgCacheProxyUrl');if(proxyUrl){cacheProxyInput.readOnly=false;cacheProxyInput.classList.remove('bg-muted');cacheProxyInput.placeholder='socks5://username:password@127.0.0.1:7890'}else{cacheProxyInput.readOnly=true;cacheProxyInput.classList.add('bg-muted');cacheProxyInput.value='';cacheProxyInput.placeholder='设置服务代理后自动启用'}},
         updateStatsigIdState=()=>{const dynamicToggle=$('cfgDynamicStatsig'),statsigInput=$('cfgStatsigId');if(dynamicToggle.checked){statsigInput.disabled=true;statsigInput.classList.add('bg-muted','text-muted-foreground');statsigInput.placeholder='已启用动态生成'}else{statsigInput.disabled=false;statsigInput.classList.remove('bg-muted','text-muted-foreground');statsigInput.placeholder=''}};
         loadSettings=async()=>{try{const r=await apiRequest('/api/settings');if(!r)return;const d=await r.json();if(d.success){const g=d.data.global,k=d.data.grok;const cfClearance=k.cf_clearance||'';const cleanCfDisplay=cfClearance.startsWith('cf_clearance=')?cfClearance.split('cf_clearance=')[1]:cfClearance;$('cfgAdminUser').value=g.admin_username||'';$('cfgAdminPass').value='';$('cfgLogLevel').value=g.log_level||'DEBUG';$('cfgImageCacheMaxSize').value=g.image_cache_max_size_mb||500;$('cfgVideoCacheMaxSize').value=g.video_cache_max_size_mb||1000;$('cfgImageMode').value=g.image_mode||'url';$('cfgBaseUrl').value=g.base_url||'';$('cfgApiKey').value=k.api_key||'';$('cfgProxyUrl').value=k.proxy_url||'';$('cfgCacheProxyUrl').value=k.cache_proxy_url||'';$('cfgCfClearance').value=cleanCfDisplay;$('cfgStatsigId').value=k.x_statsig_id||'';$('cfgDynamicStatsig').checked=k.dynamic_statsig!==false;updateStatsigIdState();$('cfgFilteredTags').value=k.filtered_tags||'';$('cfgShowThinking').value=k.show_thinking!==false?'true':'false';$('cfgTemporary').value=k.temporary!==false?'true':'false';$('cfgStreamChunkTimeout').value=k.stream_chunk_timeout||120;$('cfgStreamFirstResponseTimeout').value=k.stream_first_response_timeout||30;$('cfgStreamTotalTimeout').value=k.stream_total_timeout||600;updateCacheProxyReadonly();await loadCacheSize();if(currentStorageMode==='FILE')await loadStorageFiles(storageCurrentPath)}}catch(e){console.error('加载配置失败:',e);showToast('加载配置失败','error')}},
