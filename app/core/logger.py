@@ -52,7 +52,14 @@ class LoggerManager:
 
         # 配置
         log_dir = Path(__file__).parents[2] / "logs"
-        if log_dir.exists():
+        if log_dir.is_symlink():
+            target = log_dir.resolve(strict=False)
+            if target.exists():
+                if not target.is_dir():
+                    raise FileExistsError(f"Log symlink target is not a directory: {target}")
+            else:
+                target.mkdir(parents=True, exist_ok=True)
+        elif log_dir.exists():
             if not log_dir.is_dir():
                 raise FileExistsError(f"Log path exists but is not a directory: {log_dir}")
         else:
