@@ -52,7 +52,11 @@ class LoggerManager:
 
         # 配置
         log_dir = Path(__file__).parents[2] / "logs"
-        os.makedirs(log_dir, exist_ok=True)
+        try:
+            log_dir.mkdir(parents=True, exist_ok=True)
+        except FileExistsError:
+            if not log_dir.is_dir():
+                raise
         log_level = setting.global_config.get("log_level", "INFO").upper()
         log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         log_file = log_dir / "app.log"
