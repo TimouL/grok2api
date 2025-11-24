@@ -1,6 +1,7 @@
 """全局日志模块 - 单例模式的日志管理器"""
 
 import sys
+import os
 import logging
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
@@ -51,7 +52,7 @@ class LoggerManager:
 
         # 配置
         log_dir = Path(__file__).parents[2] / "logs"
-        log_dir.mkdir(exist_ok=True)
+        os.makedirs(log_dir, exist_ok=True)
         log_level = setting.global_config.get("log_level", "INFO").upper()
         log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         log_file = log_dir / "app.log"
