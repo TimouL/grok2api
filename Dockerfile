@@ -20,7 +20,9 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # 清理基础镜像中的冗余文件
-RUN rm -rf /usr/share/doc/* \
+RUN apt-get update \ 
+    && apt-get install -y --no-install-recommends git \ 
+    && rm -rf /usr/share/doc/* \
     /usr/share/man/* \
     /usr/share/locale/* \
     /var/cache/apt/* \
