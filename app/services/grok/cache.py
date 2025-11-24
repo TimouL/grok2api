@@ -33,20 +33,20 @@ class CacheService:
 
     def _ensure_dir(self, path: Path):
         """兼容软链接的目录创建"""
-        try:
-            path.mkdir(parents=True, exist_ok=True)
+        parent = path.parent
+
+        # 父目录是软链时，直接在目标上创建
+        if parent.is_symlink():
+            target_parent = parent.resolve(strict=False)
+            target_parent.mkdir(parents=True, exist_ok=True)
+            target_dir = target_parent / path.name
+            target_dir.mkdir(exist_ok=True)
             return
-        except FileNotFoundError:
-            # 父目录可能是软链且目标未创建
-            parent = path.parent
-            if parent.is_symlink():
-                target_parent = parent.resolve(strict=False)
-                target_parent.mkdir(parents=True, exist_ok=True)
-                target_dir = target_parent / path.name
-                target_dir.mkdir(exist_ok=True)
+
+        # 普通路径处理
+        if path.exists():
+            if path.is_dir():
                 return
-            raise
-        except FileExistsError:
             if path.is_symlink():
                 target = path.resolve(strict=False)
                 if target.exists():
@@ -55,9 +55,14 @@ class CacheService:
                 else:
                     target.mkdir(parents=True, exist_ok=True)
                 return
-            if path.is_dir():
-                return
-            raise
+            raise FileExistsError(f"Path exists but is not dir: {path}")
+
+        # 父路径校验
+        if parent.exists() and not (parent.is_dir() or parent.is_symlink()):
+            raise FileExistsError(f"Parent exists but is not dir/symlink: {parent}")
+
+        parent.mkdir(parents=True, exist_ok=True)
+        path.mkdir(exist_ok=True)
 
     def _get_path(self, file_path: str) -> Path:
         """转换文件路径为缓存路径"""
