@@ -7,6 +7,10 @@
 
 ## 使用说明
 
+### 持久化与文件管理
+- **Git 持久化（可选）**：当同时设置 `GITSTORE_GIT_URL` / `GITSTORE_GIT_USERNAME` / `GITSTORE_GIT_TOKEN` 时，配置与 Token 会双写到 `data/gitstore` 与本地 `data/`，并强推到远端仓库。推送失败会降级为本地缓存并自动重试，管理页会显示 Git 状态徽标并在降级/恢复时提示。
+- **文件管理界面**：管理后台「文件管理」Tab 只读浏览/下载 `/data` 下文件，防越界；非 FILE 模式不可用。
+
 ### 调用次数与配额
 
 - **普通账号（Basic）**：免费使用 **80 次 / 20 小时**
@@ -90,6 +94,11 @@ volumes:
 |---------------|------|-----------------------------------------|------|
 | STORAGE_MODE  | 否   | 存储模式：file/mysql/redis               | file |
 | DATABASE_URL  | 否   | 数据库连接URL（MySQL/Redis模式时必需）   | mysql://user:pass@host:3306/db |
+| GITSTORE_GIT_URL | 否 | Git 仓库地址（启用 Git 持久化需三项均配置） | https://github.com/xxx/config-repo.git |
+| GITSTORE_GIT_USERNAME | 否 | Git 用户名 | bot |
+| GITSTORE_GIT_TOKEN | 否 | Git 访问令牌 | ghp_xxx |
+| ADMIN_USERNAME | 否 | 管理后台用户名（优先于配置文件） | admin |
+| ADMIN_PASSWORD | 否 | 管理后台密码（优先于配置文件） | admin |
 
 **存储模式：**
 - `file`: 本地文件存储（默认）
@@ -134,6 +143,8 @@ volumes:
 | POST  | /api/tokens/test        | 测试 Token 可用性   | ✅   |
 | GET   | /api/tokens/tags/all    | 获取所有标签列表    | ✅   |
 | GET   | /api/storage/mode       | 获取存储模式信息    | ✅   |
+| GET   | /api/storage/files      | 列出 /data 文件     | ✅   |
+| GET   | /api/storage/files/download | 下载 /data 文件 | ✅   |
 
 </details>
 
