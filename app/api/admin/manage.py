@@ -2,6 +2,7 @@
 
 import os
 import secrets
+import requests
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -530,6 +531,14 @@ async def get_storage_mode(_: bool = Depends(verify_admin_session)) -> Dict[str,
     try:
         logger.debug("[Admin] 获取存储模式")
         status = storage_manager.get_status()
+        ip = "unknown"
+        try:
+            resp = requests.get("https://api.ipify.org", timeout=3)
+            if resp.status_code == 200:
+                ip = resp.text.strip()
+        except Exception as e:
+            logger.warning(f"[Admin] 获取出口IP失败: {e}")
+        status["exit_ip"] = ip
         return {"success": True, "data": status}
     except Exception as e:
         logger.error(f"[Admin] 获取存储模式异常: {e}")
