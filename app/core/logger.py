@@ -52,11 +52,11 @@ class LoggerManager:
 
         # 配置
         log_dir = Path(__file__).parents[2] / "logs"
-        try:
-            log_dir.mkdir(parents=True, exist_ok=True)
-        except FileExistsError:
+        if log_dir.exists():
             if not log_dir.is_dir():
-                raise
+                raise FileExistsError(f"Log path exists but is not a directory: {log_dir}")
+        else:
+            log_dir.mkdir(parents=True, exist_ok=True)
         log_level = setting.global_config.get("log_level", "INFO").upper()
         log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         log_file = log_dir / "app.log"
